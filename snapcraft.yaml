@@ -1,0 +1,54 @@
+name: naabu
+adopt-info: naabu
+summary: Naabu is a port scanning tool written in Go
+description: |
+  Naabu is a port scanning tool written in Go that allows you to enumerate valid 
+  ports for hosts in a fast and reliable manner. It is a really simple tool that 
+  does fast SYN/CONNECT scans on the host/list of hosts and lists all ports that 
+  return a reply.
+
+license: MIT
+
+base: core18
+grade: stable
+confinement: strict
+
+apps:
+  naabu:
+    command: naabu
+    plugs:
+      - network
+      - network-bind
+      - home
+      
+parts:
+  naabu:
+    after: 
+      - gologger
+    source: https://github.com/projectdiscovery/naabu
+    source-type: git
+    plugin: go
+    go-importpath: github.com/projectdiscovery/naabu
+    
+    override-pull: |
+      snapcraftctl pull
+      snapcraftctl set-version "$(git describe --tags | sed 's/^v//' | cut -d "-" -f1)"    
+ 
+    override-build: |
+      echo "\nStarting override-build for tracker part:"
+      export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
+      cd $GOPATH/src/github.com/projectdiscovery/naabu
+      go get -u ./...
+      go install ./...
+      mkdir $SNAPCRAFT_PART_INSTALL/usr/bin
+      mv $GOPATH/bin/naabu $SNAPCRAFT_PART_INSTALL/usr/bin/naabu
+      
+    build-packages:
+      - golang-github-google-gopacket-dev
+      - libpcap-dev
+      
+  gologger:
+    source: https://github.com/nikoeleison/gologger
+    source-type: git
+    plugin: go
+    go-importpath: github.com/nikoeleison/gologger
